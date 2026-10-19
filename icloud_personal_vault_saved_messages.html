@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iCloud Vault — Saved Messages</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Inter & SF Pro Display Fallback Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif'],
+                        mono: ['"SF Mono"', '"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        apple: {
+                            blue: '#007AFF',
+                            blueHover: '#0062CC',
+                            darkBg: '#090D16',
+                            lightBg: '#F2F2F7',
+                            green: '#34C759',
+                            red: '#FF3B30',
+                            orange: '#FF9500',
+                            purple: '#AF52DE',
+                            indigo: '#5856D6',
+                            teal: '#5AC8FA'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Apple Cupertino & VisionOS Glassmorphism Styles */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .selectable-text {
+            user-select: text;
+        }
+
+        /* Dynamic macOS Sonoma / iOS 18 Mesh Wallpaper */
+        .apple-wallpaper-dark {
+            background: radial-gradient(circle at 18% 20%, rgba(0, 122, 255, 0.32) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 15%, rgba(175, 82, 222, 0.26) 0%, transparent 48%),
+                        radial-gradient(circle at 50% 85%, rgba(88, 86, 214, 0.28) 0%, transparent 55%),
+                        radial-gradient(circle at 12% 88%, rgba(52, 199, 89, 0.16) 0%, transparent 40%),
+                        linear-gradient(145deg, #06080f 0%, #0d1322 50%, #090b12 100%);
+        }
+
+        .apple-wallpaper-light {
+            background: radial-gradient(circle at 18% 20%, rgba(0, 122, 255, 0.22) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 15%, rgba(175, 82, 222, 0.18) 0%, transparent 48%),
+                        radial-gradient(circle at 50% 85%, rgba(90, 200, 250, 0.28) 0%, transparent 55%),
+                        linear-gradient(145deg, #e5ecff 0%, #f3f5fa 50%, #e9eff8 100%);
+        }
+
+        /* VisionOS / macOS Frosted Glass Surfaces */
+        .glass-panel-dark {
+            background: rgba(22, 27, 38, 0.68);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.11);
+        }
+
+        .glass-panel-light {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        /* iOS Lock Screen Keypad Button */
+        .ios-keypad-btn {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: all 0.14s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .ios-keypad-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            transform: scale(1.03);
+        }
+        .ios-keypad-btn:active, .ios-keypad-btn.active-press {
+            background: rgba(255, 255, 255, 0.42);
+            transform: scale(0.94);
+        }
+
+        /* Apple Shake Animation for Wrong Passcode */
+        @keyframes appleShake {
+            0%, 100% { transform: translateX(0); }
+            15% { transform: translateX(-14px); }
+            30% { transform: translateX(12px); }
+            45% { transform: translateX(-10px); }
+            60% { transform: translateX(8px); }
+            75% { transform: translateX(-4px); }
+        }
+        .animate-apple-shake {
+            animation: appleShake 0.48s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* Message Bubble Pop Animation */
+        @keyframes bubblePop {
+            0% { opacity: 0; transform: translateY(10px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .message-bubble-enter {
+            animation: bubblePop 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.5);
+        }
+
+        /* iMessage Tail Styling */
+        .imessage-bubble-self {
+            background: linear-gradient(135deg, #007AFF 0%, #0062CC 100%);
+            color: #ffffff;
+            border-radius: 20px 20px 4px 20px;
+            box-shadow: 0 4px 18px rgba(0, 122, 255, 0.22);
+        }
+        .dark .imessage-card-bubble {
+            background: rgba(30, 37, 52, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #f8fafc;
+            border-radius: 20px 20px 4px 20px;
+        }
+        html:not(.dark) .imessage-card-bubble {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #0f172a;
+            border-radius: 20px 20px 4px 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="apple-wallpaper-dark text-slate-100 h-screen w-screen overflow-hidden relative transition-colors duration-500" id="app-body">
+
+    <!-- ==========================================
+         1. APPLE iOS 18 / macOS SONOMA LOCK SCREEN
+         ========================================== -->
+    <div id="lock-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-between py-8 px-4 transition-all duration-500 ease-out" style="background: rgba(6, 10, 19, 0.62); backdrop-filter: blur(36px); -webkit-backdrop-filter: blur(36px);">
+        
+        <!-- Top Status Bar (macOS/iOS style) -->
+        <div class="w-full max-w-5xl flex items-center justify-between px-4 text-xs font-medium text-white/80">
+            <div class="flex items-center gap-2">
+                <i class="fa-brands fa-apple text-base text-white"></i>
+                <span>iCloud Secure Vault</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>End-to-End Protected</span>
+                </span>
+                <i class="fa-solid fa-wifi text-white/80"></i>
+                <i class="fa-solid fa-battery-full text-white/90 text-sm"></i>
+            </div>
+        </div>
+
+        <!-- Center Lock Clock + PIN Interface -->
+        <div class="flex flex-col items-center w-full max-w-sm my-auto">
+            <!-- Live Clock & Date -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs mb-2">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span id="lock-date-display">Monday, October 19</span>
+                </div>
+                <h1 id="lock-time-display" class="text-6xl sm:text-7xl font-semibold tracking-tight text-white drop-shadow-md">
+                    09:41
+                </h1>
+            </div>
+
+            <!-- Vault Avatar & Prompt -->
+            <div class="flex flex-col items-center mb-5">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 p-0.5 shadow-lg shadow-blue-500/30 mb-3 flex items-center justify-center">
+                    <div class="w-full h-full bg-slate-950/40 backdrop-blur-md rounded-[14px] flex items-center justify-center">
+                        <i id="lock-icon-state" class="fa-solid fa-shield-halved text-2xl text-white transition-transform duration-300"></i>
+                    </div>
+                </div>
+                <p id="pin-status-text" class="text-sm font-medium text-white/90 tracking-wide">Enter Passcode to Unlock Vault</p>
+                <p class="text-[11px] text-white/50 mt-0.5">Keyboard or Touch Keypad Supported</p>
+            </div>
+
+            <!-- 4-Digit Passcode Dots -->
+            <div id="pin-dots-container" class="flex items-center justify-center gap-5 mb-7 py-1">
+                <div class="pin-dot w-3.5 h-3.5 rounded-full border-2 border-white/70 transition-all duration-150"></div>
+                <div class="pin-dot w-3.5 h-3.5 rounded-full border-2 border-white/70 transition-all duration-150"></div>
+                <div class="pin-dot w-3.5 h-3.5 rounded-full border-2 border-white/70 transition-all duration-150"></div>
+                <div class="pin-dot w-3.5 h-3.5 rounded-full border-2 border-white/70 transition-all duration-150"></div>
+            </div>
+
+            <!-- iOS Circular Frosted Glass Keypad -->
+            <div class="grid grid-cols-3 gap-4 sm:gap-5 w-full max-w-[276px]">
+                <button type="button" onclick="handlePinInput('1')" data-key="1" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">1</span>
+                    <span class="text-[9px] tracking-[2px] text-white/50 font-semibold mt-1">&nbsp;</span>
+                </button>
+                <button type="button" onclick="handlePinInput('2')" data-key="2" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">2</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">ABC</span>
+                </button>
+                <button type="button" onclick="handlePinInput('3')" data-key="3" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">3</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">DEF</span>
+                </button>
+                <button type="button" onclick="handlePinInput('4')" data-key="4" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">4</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">GHI</span>
+                </button>
+                <button type="button" onclick="handlePinInput('5')" data-key="5" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">5</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">JKL</span>
+                </button>
+                <button type="button" onclick="handlePinInput('6')" data-key="6" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">6</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">MNO</span>
+                </button>
+                <button type="button" onclick="handlePinInput('7')" data-key="7" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">7</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">PQRS</span>
+                </button>
+                <button type="button" onclick="handlePinInput('8')" data-key="8" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">8</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">TUV</span>
+                </button>
+                <button type="button" onclick="handlePinInput('9')" data-key="9" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">9</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">WXYZ</span>
+                </button>
+                <!-- Clear Button -->
+                <button type="button" onclick="clearPinInput()" class="w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex items-center justify-center text-xs font-medium text-white/70 hover:text-white transition mx-auto">
+                    Clear
+                </button>
+                <button type="button" onclick="handlePinInput('0')" data-key="0" class="ios-keypad-btn w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex flex-col items-center justify-center text-white mx-auto">
+                    <span class="text-2xl sm:text-3xl font-normal leading-none">0</span>
+                    <span class="text-[9px] tracking-[2px] text-white/60 font-semibold mt-1">+</span>
+                </button>
+                <!-- Backspace Button -->
+                <button type="button" onclick="backspacePinInput()" class="w-19 h-19 sm:w-20 sm:h-20 aspect-square rounded-full flex items-center justify-center text-lg text-white/80 hover:text-white transition mx-auto">
+                    <i class="fa-solid fa-delete-left"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Lock Footer -->
+        <div class="text-center text-xs text-white/45 flex flex-col items-center gap-1">
+            <span>Personal Cloud Vault • Saved Messages</span>
+            <div class="w-32 h-1 rounded-full bg-white/30 mt-2"></div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         2. MAIN APPLE SAVED MESSAGES WORKSPACE (macOS / iOS)
+         ==================================================== -->
+    <div id="main-app" class="h-full w-full flex items-center justify-center p-0 sm:p-3 md:p-5 opacity-0 pointer-events-none scale-95 transition-all duration-500 ease-out">
+        
+        <!-- Main Glass Window Container -->
+        <div id="window-shell" class="glass-panel-dark w-full h-full max-w-7xl sm:rounded-3xl shadow-2xl flex overflow-hidden relative transition-colors duration-300">
+
+            <!-- Drag and Drop Full-Window Overlay -->
+            <div id="dropzone-overlay" class="fixed inset-0 z-40 bg-blue-600/25 backdrop-blur-md border-4 border-dashed border-blue-400 rounded-3xl m-4 hidden flex-col items-center justify-center pointer-events-none">
+                <div class="w-20 h-20 rounded-3xl bg-blue-500 text-white flex items-center justify-center text-4xl shadow-2xl mb-4 animate-bounce">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white">Drop Photos or Files to Save in Vault</h3>
+                <p class="text-sm text-blue-100 mt-1">Supports Images, PDFs, ZIPs, Audio, Videos & Documents</p>
+            </div>
+
+            <!-- ==========================================
+                 LEFT SIDEBAR (macOS Sonoma Style)
+                 ========================================== -->
+            <aside id="sidebar" class="w-72 border-r border-white/10 dark:border-white/10 flex-col justify-between hidden lg:flex shrink-0 select-none bg-black/10 dark:bg-black/20">
+                <div>
+                    <!-- macOS Traffic Lights + Vault Status -->
+                    <div class="p-4 flex items-center justify-between border-b border-white/10">
+                        <div class="flex items-center gap-2">
+                            <button onclick="lockVault()" title="Lock Vault" class="w-3.5 h-3.5 rounded-full bg-[#FF5F56] hover:opacity-80 flex items-center justify-center group">
+                                <i class="fa-solid fa-xmark text-[8px] text-black/70 opacity-0 group-hover:opacity-100"></i>
+                            </button>
+                            <button onclick="toggleTheme()" title="Toggle Light/Dark Mode" class="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] hover:opacity-80 flex items-center justify-center group">
+                                <i class="fa-solid fa-sun text-[7px] text-black/70 opacity-0 group-hover:opacity-100"></i>
+                            </button>
+                            <button onclick="openCloudModal()" title="Cloud & Backup Settings" class="w-3.5 h-3.5 rounded-full bg-[#27C93F] hover:opacity-80 flex items-center justify-center group">
+                                <i class="fa-solid fa-plus text-[8px] text-black/70 opacity-0 group-hover:opacity-100"></i>
+                            </button>
+                        </div>
+                        <span id="sync-badge-sidebar" class="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span id="sync-status-text">iCloud Synced</span>
+                        </span>
+                    </div>
+
+                    <!-- Active Chat Card (Telegram Saved Messages style) -->
+                    <div class="p-3">
+                        <div class="p-3 rounded-2xl bg-apple-blue/90 text-white shadow-lg shadow-blue-500/20 flex items-center gap-3 cursor-pointer">
+                            <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="font-semibold text-sm truncate">Saved Messages</h2>
+                                    <i class="fa-solid fa-thumbtack text-[11px] opacity-80"></i>
+                                </div>
+                                <p id="sidebar-last-msg" class="text-xs text-blue-100 truncate mt-0.5">Your personal Apple cloud vault</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter Navigation -->
+                    <div class="px-3 py-2">
+                        <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Vault Filters</p>
+                        <nav class="space-y-1" id="sidebar-categories">
+                            <button onclick="setCategory('all')" data-cat="all" class="sidebar-cat-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium bg-white/10 text-white transition">
+                                <span class="flex items-center gap-2.5"><i class="fa-solid fa-layer-group text-apple-blue w-4"></i> All Items</span>
+                                <span id="count-all" class="text-xs px-2 py-0.5 rounded-full bg-white/10">0</span>
+                            </button>
+                            <button onclick="setCategory('text')" data-cat="text" class="sidebar-cat-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/5 transition">
+                                <span class="flex items-center gap-2.5"><i class="fa-solid fa-align-left text-indigo-400 w-4"></i> Notes & Text</span>
+                                <span id="count-text" class="text-xs px-2 py-0.5 rounded-full bg-white/5">0</span>
+                            </button>
+                            <button onclick="setCategory('photos')" data-cat="photos" class="sidebar-cat-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/5 transition">
+                                <span class="flex items-center gap-2.5"><i class="fa-solid fa-image text-pink-400 w-4"></i> Photos</span>
+                                <span id="count-photos" class="text-xs px-2 py-0.5 rounded-full bg-white/5">0</span>
+                            </button>
+                            <button onclick="setCategory('files')" data-cat="files" class="sidebar-cat-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/5 transition">
+                                <span class="flex items-center gap-2.5"><i class="fa-solid fa-folder-open text-amber-400 w-4"></i> Files & Docs</span>
+                                <span id="count-files" class="text-xs px-2 py-0.5 rounded-full bg-white/5">0</span>
+                            </button>
+                            <button onclick="setCategory('links')" data-cat="links" class="sidebar-cat-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/5 transition">
+                                <span class="flex items-center gap-2.5"><i class="fa-solid fa-link text-emerald-400 w-4"></i> Web Links</span>
+                                <span id="count-links" class="text-xs px-2 py-0.5 rounded-full bg-white/5">0</span>
+                            </button>
+                            <button onclick="setCategory('pinned')" data-cat="pinned" class="sidebar-cat-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/5 transition">
+                                <span class="flex items-center gap-2.5"><i class="fa-solid fa-thumbtack text-orange-400 w-4"></i> Pinned</span>
+                                <span id="count-pinned" class="text-xs px-2 py-0.5 rounded-full bg-white/5">0</span>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Bottom Storage & Quick Actions -->
+                <div class="p-4 border-t border-white/10 space-y-3">
+                    <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="flex items-center justify-between text-xs mb-1.5">
+                            <span class="font-medium text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-cloud text-apple-blue"></i> Vault Storage
+                            </span>
+                            <span id="storage-size-label" class="text-slate-400 font-mono">0 KB</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                            <div id="storage-bar" class="h-full bg-gradient-to-r from-apple-blue to-purple-500 rounded-full transition-all duration-300" style="width: 8%"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                            <span>PIN: <strong class="text-slate-200 font-mono">5109</strong></span>
+                            <button onclick="openCloudModal()" class="text-apple-blue hover:underline font-medium">Backup / Vercel</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="lockVault()" class="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-lock"></i> Lock Screen
+                        </button>
+                        <button onclick="openCloudModal()" class="py-2 px-3 rounded-xl bg-apple-blue/20 hover:bg-apple-blue/30 text-apple-blue text-xs font-medium flex items-center justify-center gap-1.5 transition" title="Vercel & Backup Guide">
+                            <i class="fa-solid fa-gear"></i>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- ==========================================
+                 RIGHT MAIN CHATBOX INTERFACE
+                 ========================================== -->
+            <main class="flex-1 flex flex-col h-full min-w-0 relative">
+
+                <!-- Top Frosted Glass Header -->
+                <header class="px-4 py-3 border-b border-white/10 flex flex-col gap-2.5 bg-white/5 backdrop-blur-xl z-20 shrink-0">
+                    <div class="flex items-center justify-between gap-2">
+                        <!-- Vault Title & Avatar -->
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-apple-blue to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+                                <i class="fa-solid fa-bookmark text-base"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h1 class="font-semibold text-base tracking-tight truncate">Saved Messages</h1>
+                                    <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-apple-blue/20 text-blue-400 border border-blue-400/20">VAULT</span>
+                                </div>
+                                <p id="header-subtitle" class="text-xs text-slate-400 truncate">Cloud & Local IndexedDB Permanent History</p>
+                            </div>
+                        </div>
+
+                        <!-- Search Bar & Top Action Buttons -->
+                        <div class="flex items-center gap-2">
+                            <!-- Search Input -->
+                            <div class="relative hidden sm:block w-48 md:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+                                <input
+                                    id="search-input"
+                                    type="text"
+                                    oninput="handleSearch(this.value)"
+                                    placeholder="Search messages, files..."
+                                    class="w-full pl-8 pr-7 py-1.5 rounded-full bg-black/20 dark:bg-white/10 border border-white/15 text-xs focus:outline-none focus:border-apple-blue transition"
+                                >
+                                <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                </button>
+                            </div>
+
+                            <!-- Mobile Search Toggle -->
+                            <button onclick="toggleMobileSearch()" class="sm:hidden w-9 h-9 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center text-sm transition" title="Search">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+
+                            <!-- Theme Toggle (Dark / Light) -->
+                            <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center text-sm transition" title="Switch Dark/Light Mode">
+                                <i id="theme-icon" class="fa-solid fa-moon"></i>
+                            </button>
+
+                            <!-- Cloud, Backup & Vercel Guide Modal Button -->
+                            <button onclick="openCloudModal()" class="h-9 px-3 rounded-full bg-white/10 hover:bg-white/15 flex items-center gap-1.5 text-xs font-medium transition" title="Backup & Vercel Setup">
+                                <i class="fa-solid fa-cloud-arrow-up text-apple-blue"></i>
+                                <span class="hidden md:inline">Cloud & Vercel</span>
+                            </button>
+
+                            <!-- Instant Lock Button -->
+                            <button onclick="lockVault()" class="h-9 px-3 rounded-full bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/20 flex items-center gap-1.5 text-xs font-medium transition" title="Lock Vault (PIN: 5109)">
+                                <i class="fa-solid fa-lock"></i>
+                                <span class="hidden sm:inline">Lock</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Search Bar (Expandable) -->
+                    <div id="mobile-search-bar" class="hidden sm:hidden">
+                        <div class="relative w-full">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+                            <input
+                                id="mobile-search-input"
+                                type="text"
+                                oninput="handleSearch(this.value)"
+                                placeholder="Search saved messages, filenames, links..."
+                                class="w-full pl-8 pr-8 py-2 rounded-xl bg-black/25 border border-white/15 text-xs focus:outline-none focus:border-apple-blue"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Category Filter Pills (Visible on all screens for instant filtering) -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                        <button onclick="setCategory('all')" data-pill="all" class="cat-pill px-3 py-1 rounded-full text-xs font-medium bg-apple-blue text-white shadow-sm shrink-0 transition">
+                            All
+                        </button>
+                        <button onclick="setCategory('text')" data-pill="text" class="cat-pill px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/15 shrink-0 transition">
+                            <i class="fa-solid fa-align-left mr-1 text-[10px] opacity-80"></i>Text
+                        </button>
+                        <button onclick="setCategory('photos')" data-pill="photos" class="cat-pill px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/15 shrink-0 transition">
+                            <i class="fa-solid fa-image mr-1 text-[10px] opacity-80"></i>Photos
+                        </button>
+                        <button onclick="setCategory('files')" data-pill="files" class="cat-pill px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/15 shrink-0 transition">
+                            <i class="fa-solid fa-paperclip mr-1 text-[10px] opacity-80"></i>Files
+                        </button>
+                        <button onclick="setCategory('links')" data-pill="links" class="cat-pill px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/15 shrink-0 transition">
+                            <i class="fa-solid fa-link mr-1 text-[10px] opacity-80"></i>Links
+                        </button>
+                        <button onclick="setCategory('pinned')" data-pill="pinned" class="cat-pill px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/15 shrink-0 transition">
+                            <i class="fa-solid fa-thumbtack mr-1 text-[10px] opacity-80"></i>Pinned
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Sticky Pinned Message Banner (Telegram Style) -->
+                <div id="pinned-banner" class="hidden px-4 py-2 bg-apple-blue/15 border-b border-apple-blue/25 backdrop-blur-md flex items-center justify-between gap-3 z-10 shrink-0 cursor-pointer" onclick="scrollToLatestPinned()">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-1 h-7 rounded-full bg-apple-blue shrink-0"></div>
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-semibold text-apple-blue flex items-center gap-1">
+                                <i class="fa-solid fa-thumbtack text-[10px]"></i> Pinned Message
+                            </p>
+                            <p id="pinned-banner-text" class="text-xs truncate opacity-90">Pinned item</p>
+                        </div>
+                    </div>
+                    <button onclick="event.stopPropagation(); setCategory('pinned')" class="text-xs px-2.5 py-1 rounded-lg bg-apple-blue/20 hover:bg-apple-blue/30 text-blue-300 font-medium shrink-0">
+                        View All
+                    </button>
+                </div>
+
+                <!-- ==========================================
+                     MESSAGES SCROLL STREAM
+                     ========================================== -->
+                <div id="messages-container" class="flex-1 overflow-y-auto px-3 sm:px-6 py-5 space-y-4 selectable-text">
+                    <!-- Dynamic messages rendered here -->
+                </div>
+
+                <!-- ==========================================
+                     ATTACHMENT STAGING TRAY (Before Sending)
+                     ========================================== -->
+                <div id="staging-tray" class="hidden px-4 py-2.5 bg-black/30 backdrop-blur-xl border-t border-white/10 shrink-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-blue-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-paperclip"></i>
+                            <span id="staging-count-label">1 Attachment Ready to Save</span>
+                        </span>
+                        <button onclick="clearStagingFiles()" class="text-xs text-red-400 hover:underline">
+                            Remove All
+                        </button>
+                    </div>
+                    <div id="staging-items-list" class="flex items-center gap-2.5 overflow-x-auto pb-1">
+                        <!-- Staged previews -->
+                    </div>
+                </div>
+
+                <!-- ==========================================
+                     BOTTOM APPLE iMESSAGE COMPOSER BAR
+                     ========================================== -->
+                <footer class="p-3 sm:p-4 border-t border-white/10 bg-white/5 backdrop-blur-2xl shrink-0">
+                    <!-- Hidden File Inputs -->
+                    <input type="file" id="image-upload-input" accept="image/*" multiple class="hidden" onchange="handleFileSelection(this.files)">
+                    <input type="file" id="any-file-upload-input" multiple class="hidden" onchange="handleFileSelection(this.files)">
+
+                    <div class="flex items-end gap-2 max-w-5xl mx-auto">
+                        <!-- Plus / Attachment Button Menu -->
+                        <div class="relative">
+                            <button
+                                id="attach-menu-btn"
+                                onclick="toggleAttachMenu()"
+                                type="button"
+                                class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-200 transition shrink-0"
+                                title="Attach Photo, File, or Code"
+                            >
+                                <i id="attach-plus-icon" class="fa-solid fa-plus text-base transition-transform duration-200"></i>
+                            </button>
+
+                            <!-- Popover Menu -->
+                            <div id="attach-popover" class="hidden absolute bottom-13 left-0 mb-2 w-52 rounded-2xl glass-panel-dark p-1.5 shadow-2xl border border-white/15 z-30">
+                                <button type="button" onclick="triggerImageUpload()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-xs font-medium text-left transition">
+                                    <span class="w-7 h-7 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                                        <i class="fa-solid fa-image"></i>
+                                    </span>
+                                    <div>
+                                        <p class="font-semibold text-white">Photos & Screenshots</p>
+                                        <p class="text-[10px] text-slate-400">JPG, PNG, WEBP, GIF</p>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="triggerAnyFileUpload()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-xs font-medium text-left transition">
+                                    <span class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                                        <i class="fa-solid fa-file-zipper"></i>
+                                    </span>
+                                    <div>
+                                        <p class="font-semibold text-white">Any Document / File</p>
+                                        <p class="text-[10px] text-slate-400">PDF, ZIP, Audio, APK, Doc</p>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="insertCodeTemplate()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-xs font-medium text-left transition">
+                                    <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                                        <i class="fa-solid fa-code"></i>
+                                    </span>
+                                    <div>
+                                        <p class="font-semibold text-white">Code Snippet</p>
+                                        <p class="text-[10px] text-slate-400">Formatted code block</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Direct Image & File Upload Buttons (Desktop & Mobile convenience) -->
+                        <button
+                            type="button"
+                            onclick="triggerImageUpload()"
+                            class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 hidden sm:flex items-center justify-center text-pink-400 transition shrink-0"
+                            title="Upload Image (or Ctrl+V paste)"
+                        >
+                            <i class="fa-solid fa-camera"></i>
+                        </button>
+                        <button
+                            type="button"
+                            onclick="triggerAnyFileUpload()"
+                            class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-400 transition shrink-0"
+                            title="Upload Any File (PDF, ZIP, Doc, Audio)"
+                        >
+                            <i class="fa-solid fa-paperclip"></i>
+                        </button>
+
+                        <!-- Multi-line Rich Textarea (iMessage style pill) -->
+                        <div class="flex-1 relative bg-black/25 dark:bg-white/10 border border-white/15 focus-within:border-apple-blue rounded-2xl px-3.5 py-2 flex items-center transition">
+                            <textarea
+                                id="message-input"
+                                rows="1"
+                                placeholder="Save text, links, code, or paste image (Ctrl+V)..."
+                                class="w-full bg-transparent text-sm focus:outline-none resize-none max-h-36 leading-relaxed selectable-text"
+                                oninput="autoResizeTextarea(this)"
+                                onkeydown="handleComposerKeydown(event)"
+                            ></textarea>
+                        </div>
+
+                        <!-- Apple Blue Send Arrow Button -->
+                        <button
+                            id="send-btn"
+                            type="button"
+                            onclick="sendMessage()"
+                            class="w-10 h-10 rounded-full bg-apple-blue hover:bg-apple-blueHover text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition transform active:scale-90 shrink-0"
+                            title="Save to Vault (Enter)"
+                        >
+                            <i class="fa-solid fa-arrow-up text-base"></i>
+                        </button>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         3. FULL-SCREEN IMAGE LIGHTBOX MODAL
+         ==================================================== -->
+    <div id="lightbox-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl hidden flex-col justify-between p-4">
+        <div class="flex items-center justify-between max-w-6xl w-full mx-auto py-2">
+            <div class="flex items-center gap-3">
+                <span id="lightbox-title" class="text-sm font-medium text-white truncate max-w-xs sm:max-w-md">Image Preview</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="lightbox-download-btn" class="px-3.5 py-1.5 rounded-full bg-apple-blue hover:bg-apple-blueHover text-white text-xs font-medium flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Download
+                </button>
+                <button onclick="closeLightbox()" class="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 flex items-center justify-center overflow-hidden my-4" onclick="closeLightbox()">
+            <img id="lightbox-img" src="" alt="Preview" class="max-h-full max-w-full object-contain rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
+        </div>
+    </div>
+
+    <!-- ====================================================
+         4. CLOUD SYNC, BACKUP & VERCEL DEPLOYMENT GUIDE MODAL
+         ==================================================== -->
+    <div id="cloud-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xl hidden items-center justify-center p-4">
+        <div class="glass-panel-dark w-full max-w-2xl rounded-3xl border border-white/15 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-apple-blue/20 text-apple-blue flex items-center justify-center">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-base text-white">iCloud Vault Sync, Backup & Vercel Setup</h3>
+                        <p class="text-xs text-slate-400">Permanent History Management & Deployment Guide</p>
+                    </div>
+                </div>
+                <button onclick="closeCloudModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto space-y-6 selectable-text text-sm">
+                <!-- Status Overview Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs text-slate-400">Cloud Database (Firestore)</span>
+                            <span id="modal-cloud-pill" class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-500/20 text-emerald-400">Connected</span>
+                        </div>
+                        <p id="modal-cloud-desc" class="text-xs text-slate-300">Real-time sync active across sessions.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs text-slate-400">Local IndexedDB Engine</span>
+                            <span class="px-2 py-0.5 text-[10px] rounded-full bg-blue-500/20 text-blue-400">Active (Unlimited File Size)</span>
+                        </div>
+                        <p class="text-xs text-slate-300">Stores large files, images & instant offline history.</p>
+                    </div>
+                </div>
+
+                <!-- 1-Click Backup Export / Import -->
+                <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                    <h4 class="font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-box-archive text-amber-400"></i>
+                        Full Vault Backup (Export / Import)
+                    </h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Export all your saved messages, images, and files into a single encrypted-ready <code class="text-amber-300">.json</code> archive or restore a previous backup anytime.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3 pt-1">
+                        <button onclick="exportVaultBackup()" class="px-4 py-2 rounded-xl bg-apple-blue hover:bg-apple-blueHover text-white text-xs font-medium flex items-center gap-2 transition">
+                            <i class="fa-solid fa-download"></i> Export All History (.JSON)
+                        </button>
+                        <label class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-medium flex items-center gap-2 cursor-pointer transition">
+                            <i class="fa-solid fa-upload"></i> Import Backup File
+                            <input type="file" accept=".json" class="hidden" onchange="importVaultBackup(this.files[0])">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Vercel Deployment Step-by-Step Guide (Bengali + English) -->
+                <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/20 space-y-3">
+                    <h4 class="font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-rocket text-apple-blue"></i>
+                        কিভাবে Vercel-এ হোস্ট করবেন? (How to Deploy on Vercel)
+                    </h4>
+                    <ol class="text-xs text-slate-200 space-y-2 list-decimal list-inside leading-relaxed">
+                        <li>আপনার কম্পিউটারে বা ফোনে একটি ফোল্ডার তৈরি করে এই কোডটি <code class="px-1.5 py-0.5 rounded bg-black/40 text-blue-300">index.html</code> নামে সেভ করুন।</li>
+                        <li><strong>Vercel.com</strong>-এ লগইন করে <strong>"Add New" → "Project"</strong> বা সরাসরি GitHub রিপোজিটরিতে <code class="px-1.5 py-0.5 rounded bg-black/40 text-blue-300">index.html</code> আপলোড করে Deploy করুন।</li>
+                        <li>যেকোনো ডিভাইস থেকেও যেন সকল মেসেজ ও ফাইল সবসময় সিঙ্ক থাকে, সেজন্য নিচে আপনার নিজের ফ্রি <strong>Firebase Config</strong> পেস্ট করে সেভ করতে পারেন (অথবা এই ব্রাউজারে স্বয়ংক্রিয়ভাবে সব ইতিহাস <strong>IndexedDB</strong> ও ক্লাউডে সেভ হয়ে থাকবে)।</li>
+                    </ol>
+                </div>
+
+                <!-- Custom Firebase Config for External Vercel Deployment -->
+                <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+                    <h4 class="font-semibold text-white text-xs flex items-center justify-between">
+                        <span><i class="fa-solid fa-fire text-orange-400 mr-1.5"></i> Custom Firebase Config (Optional for External Vercel URL)</span>
+                        <span class="text-[11px] text-slate-400 font-normal">Auto-configured in Preview</span>
+                    </h4>
+                    <textarea
+                        id="custom-firebase-input"
+                        rows="3"
+                        placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..."}'
+                        class="w-full p-2.5 rounded-xl bg-black/40 border border-white/15 text-xs font-mono text-slate-200 focus:outline-none focus:border-apple-blue"
+                    ></textarea>
+                    <div class="flex justify-end">
+                        <button onclick="saveCustomFirebaseConfig()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-white transition">
+                            Save Custom Cloud Config
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         5. CUSTOM APPLE CONFIRMATION MODAL (No window.confirm)
+         ==================================================== -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-panel-dark w-full max-w-xs rounded-3xl p-5 text-center border border-white/15 shadow-2xl">
+            <div class="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h4 class="font-semibold text-base text-white">Delete from Vault?</h4>
+            <p class="text-xs text-slate-300 mt-1 mb-5">This item will be permanently removed from your Saved Messages history.</p>
+            <div class="grid grid-cols-2 gap-2.5">
+                <button onclick="closeConfirmModal()" class="py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-medium text-white">
+                    Cancel
+                </button>
+                <button id="confirm-delete-btn" class="py-2 rounded-xl bg-red-500 hover:bg-red-600 text-xs font-semibold text-white">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         6. APPLE DYNAMIC ISLAND TOAST NOTIFICATION
+         ==================================================== -->
+    <div id="apple-toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-black/85 text-white border border-white/15 shadow-2xl flex items-center gap-2.5 text-xs font-medium transition-all duration-300 opacity-0 -translate-y-6 pointer-events-none">
+        <i id="apple-toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="apple-toast-text">Saved to Vault</span>
+    </div>
+
+    <!-- ====================================================
+         APPLICATION LOGIC + FIREBASE CLOUD + INDEXEDDB ENGINE
+         ==================================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // STATE & CONFIGURATION
+        // ==========================================
+        const VAULT_PIN = "5109";
+        let enteredPin = "";
+        let isVaultUnlocked = false;
+        let isDarkMode = true;
+
+        // Data State
+        let messages = []; // Merged from Firestore + IndexedDB
+        let currentCategory = "all";
+        let searchQuery = "";
+        let stagedFiles = []; // Files/images queued before hitting send
+
+        // Firebase State
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let unsubscribeSnapshot = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'apple-vault-5109';
+
+        // ==========================================
+        // 1. INDEXEDDB ENGINE (Unlimited Local & Binary File Storage)
+        // ==========================================
+        const IDB_NAME = "AppleCloudVaultDB_5109";
+        const IDB_VERSION = 1;
+        let idbInstance = null;
+
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(IDB_NAME, IDB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains("messages")) {
+                        database.createObjectStore("messages", { keyPath: "id" });
+                    }
+                    if (!database.objectStoreNames.contains("settings")) {
+                        database.createObjectStore("settings", { keyPath: "key" });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    idbInstance = e.target.result;
+                    resolve(idbInstance);
+                };
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function idbSaveMessage(msgObj) {
+            if (!idbInstance) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const tx = idbInstance.transaction("messages", "readwrite");
+                tx.objectStore("messages").put(msgObj);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function idbDeleteMessage(id) {
+            if (!idbInstance) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const tx = idbInstance.transaction("messages", "readwrite");
+                tx.objectStore("messages").delete(id);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function idbGetAllMessages() {
+            if (!idbInstance) await initIndexedDB();
+            return new Promise((resolve, reject) => {
+                const tx = idbInstance.transaction("messages", "readonly");
+                const req = tx.objectStore("messages").getAll();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function idbSaveSetting(key, value) {
+            if (!idbInstance) await initIndexedDB();
+            return new Promise((resolve) => {
+                const tx = idbInstance.transaction("settings", "readwrite");
+                tx.objectStore("settings").put({ key, value });
+                tx.oncomplete = () => resolve(true);
+            });
+        }
+
+        async function idbGetSetting(key) {
+            if (!idbInstance) await initIndexedDB();
+            return new Promise((resolve) => {
+                const tx = idbInstance.transaction("settings", "readonly");
+                const req = tx.objectStore("settings").get(key);
+                req.onsuccess = () => resolve(req.result ? req.result.value : null);
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        // ==========================================
+        // 2. FIREBASE CLOUD INITIALIZATION & SYNC
+        // ==========================================
+        async function initCloudSync() {
+            try {
+                let configToUse = null;
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    configToUse = JSON.parse(__firebase_config);
+                } else {
+                    const savedCustomConfig = await idbGetSetting("customFirebaseConfig");
+                    if (savedCustomConfig) {
+                        configToUse = JSON.parse(savedCustomConfig);
+                        document.getElementById("custom-firebase-input").value = savedCustomConfig;
+                    }
+                }
+
+                if (!configToUse) {
+                    updateSyncUI("Local Vault Active", false);
+                    return;
+                }
+
+                const app = initializeApp(configToUse);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // RULE 3: Auth Before Queries
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) {
+                        startRealtimeListener();
+                    }
+                });
+            } catch (err) {
+                console.warn("Cloud fallback to IndexedDB:", err);
+                updateSyncUI("Local Vault Saved", false);
+            }
+        }
+
+        function startRealtimeListener() {
+            if (!currentUser || !db) return;
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+            // RULE 1: Strict Paths (/artifacts/{appId}/public/data/vault_messages)
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'vault_messages');
+
+            // RULE 2: Simple collection query, sort/filter in memory
+            unsubscribeSnapshot = onSnapshot(
+                colRef,
+                async (snapshot) => {
+                    const localMsgs = await idbGetAllMessages();
+                    const localMap = new Map(localMsgs.map(m => [m.id, m]));
+
+                    snapshot.forEach((docSnap) => {
+                        const cloudData = docSnap.data();
+                        const existingLocal = localMap.get(cloudData.id);
+                        // Preserve heavy binary fileData from local IndexedDB if cloud only had metadata
+                        const merged = {
+                            ...cloudData,
+                            fileData: cloudData.fileData || (existingLocal ? existingLocal.fileData : null)
+                        };
+                        localMap.set(cloudData.id, merged);
+                        idbSaveMessage(merged);
+                    });
+
+                    messages = Array.from(localMap.values()).sort((a, b) => a.createdAt - b.createdAt);
+                    updateSyncUI("iCloud Synced", true);
+                    renderMessages();
+                    updateCountsAndStorage();
+                },
+                (error) => {
+                    console.warn("Firestore snapshot error:", error);
+                    updateSyncUI("Local Vault Mode", false);
+                }
+            );
+        }
+
+        function updateSyncUI(label, isCloudOnline) {
+            const statusText = document.getElementById("sync-status-text");
+            const badge = document.getElementById("sync-badge-sidebar");
+            const modalPill = document.getElementById("modal-cloud-pill");
+            if (statusText) statusText.textContent = label;
+            if (badge) {
+                badge.className = isCloudOnline
+                    ? "text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5"
+                    : "text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1.5";
+            }
+            if (modalPill) {
+                modalPill.textContent = isCloudOnline ? "Cloud Connected" : "Local IndexedDB";
+            }
+        }
+
+        // ==========================================
+        // 3. LOCK SCREEN & PASSCODE (5109) LOGIC
+        // ==========================================
+        function updateLockClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeEl = document.getElementById("lock-time-display");
+            const dateEl = document.getElementById("lock-date-display");
+            if (timeEl) timeEl.textContent = `${hours}:${minutes}`;
+            if (dateEl) {
+                dateEl.textContent = now.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        }
+
+        window.handlePinInput = function(digit) {
+            if (isVaultUnlocked || enteredPin.length >= 4) return;
+            enteredPin += digit;
+            animateKeypadPress(digit);
+            updatePinDots();
+
+            if (enteredPin.length === 4) {
+                setTimeout(verifyPin, 120);
+            }
+        };
+
+        window.backspacePinInput = function() {
+            if (enteredPin.length > 0) {
+                enteredPin = enteredPin.slice(0, -1);
+                updatePinDots();
+            }
+        };
+
+        window.clearPinInput = function() {
+            enteredPin = "";
+            updatePinDots();
+        };
+
+        function animateKeypadPress(digit) {
+            const btn = document.querySelector(`.ios-keypad-btn[data-key="${digit}"]`);
+            if (btn) {
+                btn.classList.add("active-press");
+                setTimeout(() => btn.classList.remove("active-press"), 140);
+            }
+        }
+
+        function updatePinDots(isError = false) {
+            const dots = document.querySelectorAll("#pin-dots-container .pin-dot");
+            dots.forEach((dot, idx) => {
+                if (isError) {
+                    dot.className = "pin-dot w-3.5 h-3.5 rounded-full border-2 border-red-500 bg-red-500 transition-all duration-150";
+                } else if (idx < enteredPin.length) {
+                    dot.className = "pin-dot w-3.5 h-3.5 rounded-full border-2 border-white bg-white scale-110 transition-all duration-150 shadow-sm shadow-white/50";
+                } else {
+                    dot.className = "pin-dot w-3.5 h-3.5 rounded-full border-2 border-white/70 bg-transparent transition-all duration-150";
+                }
+            });
+        }
+
+        function verifyPin() {
+            const dotsContainer = document.getElementById("pin-dots-container");
+            const statusText = document.getElementById("pin-status-text");
+            const lockIcon = document.getElementById("lock-icon-state");
+
+            if (enteredPin === VAULT_PIN) {
+                isVaultUnlocked = true;
+                if (lockIcon) {
+                    lockIcon.className = "fa-solid fa-lock-open text-2xl text-emerald-400 scale-110 transition-transform duration-300";
+                }
+                if (statusText) {
+                    statusText.textContent = "Vault Unlocked";
+                    statusText.className = "text-sm font-medium text-emerald-400 tracking-wide";
+                }
+
+                const lockScreen = document.getElementById("lock-screen");
+                const mainApp = document.getElementById("main-app");
+
+                setTimeout(() => {
+                    lockScreen.classList.add("opacity-0", "pointer-events-none", "scale-105");
+                    mainApp.classList.remove("opacity-0", "pointer-events-none", "scale-95");
+                    mainApp.classList.add("opacity-100", "scale-100");
+                    setTimeout(() => {
+                        const input = document.getElementById("message-input");
+                        if (input) input.focus();
+                        scrollToBottom();
+                    }, 250);
+                }, 180);
+            } else {
+                // Wrong PIN -> Apple Shake Animation
+                updatePinDots(true);
+                if (statusText) {
+                    statusText.textContent = "Incorrect Passcode. Try Again";
+                    statusText.className = "text-sm font-medium text-red-400 tracking-wide";
+                }
+                dotsContainer.classList.remove("animate-apple-shake");
+                void dotsContainer.offsetWidth; // trigger reflow
+                dotsContainer.classList.add("animate-apple-shake");
+
+                setTimeout(() => {
+                    enteredPin = "";
+                    updatePinDots(false);
+                }, 480);
+            }
+        }
+
+        window.lockVault = function() {
+            isVaultUnlocked = false;
+            enteredPin = "";
+            updatePinDots(false);
+
+            const lockIcon = document.getElementById("lock-icon-state");
+            const statusText = document.getElementById("pin-status-text");
+            if (lockIcon) lockIcon.className = "fa-solid fa-shield-halved text-2xl text-white";
+            if (statusText) {
+                statusText.textContent = "Enter Passcode to Unlock Vault";
+                statusText.className = "text-sm font-medium text-white/90 tracking-wide";
+            }
+
+            const lockScreen = document.getElementById("lock-screen");
+            const mainApp = document.getElementById("main-app");
+
+            mainApp.classList.add("opacity-0", "pointer-events-none", "scale-95");
+            mainApp.classList.remove("opacity-100", "scale-100");
+            lockScreen.classList.remove("opacity-0", "pointer-events-none", "scale-105");
+        };
+
+        // Keyboard Support for Lock Screen & Shortcuts
+        window.addEventListener("keydown", (e) => {
+            if (!isVaultUnlocked) {
+                if (e.key >= "0" && e.key <= "9") {
+                    e.preventDefault();
+                    handlePinInput(e.key);
+                } else if (e.key === "Backspace") {
+                    e.preventDefault();
+                    backspacePinInput();
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    clearPinInput();
+                }
+                return;
+            }
+
+            // Ctrl/Cmd + K for Search
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+                e.preventDefault();
+                const searchEl = document.getElementById("search-input");
+                if (searchEl) searchEl.focus();
+            }
+            // Ctrl/Cmd + L to Lock Vault
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "l") {
+                e.preventDefault();
+                lockVault();
+            }
+        });
+
+        // ==========================================
+        // 4. MESSAGE SENDING, IMAGES & FILES HANDLING
+        // ==========================================
+        window.autoResizeTextarea = function(el) {
+            el.style.height = "auto";
+            el.style.height = Math.min(el.scrollHeight, 140) + "px";
+        };
+
+        window.handleComposerKeydown = function(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        };
+
+        window.toggleAttachMenu = function() {
+            const pop = document.getElementById("attach-popover");
+            const icon = document.getElementById("attach-plus-icon");
+            pop.classList.toggle("hidden");
+            icon.classList.toggle("rotate-45");
+        };
+
+        window.triggerImageUpload = function() {
+            document.getElementById("attach-popover").classList.add("hidden");
+            document.getElementById("attach-plus-icon").classList.remove("rotate-45");
+            document.getElementById("image-upload-input").click();
+        };
+
+        window.triggerAnyFileUpload = function() {
+            document.getElementById("attach-popover").classList.add("hidden");
+            document.getElementById("attach-plus-icon").classList.remove("rotate-45");
+            document.getElementById("any-file-upload-input").click();
+        };
+
+        window.insertCodeTemplate = function() {
+            document.getElementById("attach-popover").classList.add("hidden");
+            document.getElementById("attach-plus-icon").classList.remove("rotate-45");
+            const input = document.getElementById("message-input");
+            input.value = (input.value ? input.value + "\n" : "") + "```\n// Paste your code here\n```";
+            autoResizeTextarea(input);
+            input.focus();
+        };
+
+        // Smart Image Compression for Cloud Compatibility while keeping crisp quality
+        function processImageFile(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement("canvas");
+                        const MAX_DIM = 1600;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > MAX_DIM || h > MAX_DIM) {
+                            if (w > h) {
+                                h = Math.round((h * MAX_DIM) / w);
+                                w = MAX_DIM;
+                            } else {
+                                w = Math.round((w * MAX_DIM) / h);
+                                h = MAX_DIM;
+                            }
+                        }
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.84);
+                        resolve({
+                            name: file.name || `Image_${Date.now()}.jpg`,
+                            size: file.size,
+                            mimeType: file.type || "image/jpeg",
+                            kind: "image",
+                            dataUrl: compressedDataUrl
+                        });
+                    };
+                    img.onerror = () => {
+                        resolve({
+                            name: file.name,
+                            size: file.size,
+                            mimeType: file.type,
+                            kind: "file",
+                            dataUrl: e.target.result
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function processGenericFile(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    resolve({
+                        name: file.name,
+                        size: file.size,
+                        mimeType: file.type || "application/octet-stream",
+                        kind: file.type.startsWith("image/") ? "image" : "file",
+                        dataUrl: e.target.result
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.handleFileSelection = async function(fileList) {
+            if (!fileList || fileList.length === 0) return;
+            showToast("Preparing attachments...", "fa-spinner fa-spin text-blue-400");
+
+            for (const file of Array.from(fileList)) {
+                let processed;
+                if (file.type.startsWith("image/")) {
+                    processed = await processImageFile(file);
+                } else {
+                    processed = await processGenericFile(file);
+                }
+                stagedFiles.push(processed);
+            }
+            renderStagingTray();
+            document.getElementById("image-upload-input").value = "";
+            document.getElementById("any-file-upload-input").value = "";
+            document.getElementById("message-input").focus();
+        };
+
+        function renderStagingTray() {
+            const tray = document.getElementById("staging-tray");
+            const list = document.getElementById("staging-items-list");
+            const countLabel = document.getElementById("staging-count-label");
+
+            if (stagedFiles.length === 0) {
+                tray.classList.add("hidden");
+                list.innerHTML = "";
+                return;
+            }
+
+            tray.classList.remove("hidden");
+            countLabel.textContent = `${stagedFiles.length} Attachment${stagedFiles.length > 1 ? 's' : ''} Ready — Press Enter or Send`;
+
+            list.innerHTML = stagedFiles.map((item, idx) => {
+                if (item.kind === "image") {
+                    return `
+                        <div class="relative group w-16 h-16 rounded-xl overflow-hidden border border-white/20 shrink-0 bg-black/40">
+                            <img src="${item.dataUrl}" class="w-full h-full object-cover" alt="Staged">
+                            <button onclick="removeStagedFile(${idx})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/75 text-white text-[10px] flex items-center justify-center">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/15 shrink-0 max-w-[200px]">
+                            <i class="fa-solid fa-file-lines text-amber-400 text-lg"></i>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-medium truncate text-white">${escapeHtml(item.name)}</p>
+                                <p class="text-[10px] text-slate-400">${formatBytes(item.size)}</p>
+                            </div>
+                            <button onclick="removeStagedFile(${idx})" class="w-5 h-5 rounded-full bg-white/10 hover:bg-red-500/40 text-white text-[10px] flex items-center justify-center">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }).join("");
+        }
+
+        window.removeStagedFile = function(idx) {
+            stagedFiles.splice(idx, 1);
+            renderStagingTray();
+        };
+
+        window.clearStagingFiles = function() {
+            stagedFiles = [];
+            renderStagingTray();
+        };
+
+        // Clipboard Paste Support (Ctrl+V images or files anywhere)
+        window.addEventListener("paste", async (e) => {
+            if (!isVaultUnlocked) return;
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            const filesToStage = [];
+            for (const item of items) {
+                if (item.kind === "file") {
+                    const file = item.getAsFile();
+                    if (file) filesToStage.push(file);
+                }
+            }
+            if (filesToStage.length > 0) {
+                e.preventDefault();
+                await handleFileSelection(filesToStage);
+                showToast("Clipboard attachment ready to save!", "fa-paste text-apple-blue");
+            }
+        });
+
+        // Full-Window Drag and Drop Support
+        window.addEventListener("dragover", (e) => {
+            if (!isVaultUnlocked) return;
+            e.preventDefault();
+            const overlay = document.getElementById("dropzone-overlay");
+            overlay.classList.remove("hidden");
+            overlay.classList.add("flex");
+        });
+
+        window.addEventListener("dragleave", (e) => {
+            if (e.relatedTarget === null) {
+                const overlay = document.getElementById("dropzone-overlay");
+                overlay.classList.add("hidden");
+                overlay.classList.remove("flex");
+            }
+        });
+
+        window.addEventListener("drop", async (e) => {
+            if (!isVaultUnlocked) return;
+            e.preventDefault();
+            const overlay = document.getElementById("dropzone-overlay");
+            overlay.classList.add("hidden");
+            overlay.classList.remove("flex");
+
+            if (e.dataTransfer?.files?.length > 0) {
+                await handleFileSelection(e.dataTransfer.files);
+            }
+        });
+
+        // Core Send / Save Function
+        window.sendMessage = async function() {
+            const input = document.getElementById("message-input");
+            const text = input.value.trim();
+
+            if (!text && stagedFiles.length === 0) return;
+
+            const timestamp = Date.now();
+            const itemsToSave = [];
+
+            if (stagedFiles.length > 0) {
+                stagedFiles.forEach((att, index) => {
+                    itemsToSave.push({
+                        id: `msg_${timestamp}_${index}_${Math.random().toString(36).substring(2, 7)}`,
+                        text: index === 0 ? text : "",
+                        type: att.kind === "image" ? "photo" : "file",
+                        fileName: att.name,
+                        fileSize: att.size,
+                        mimeType: att.mimeType,
+                        fileData: att.dataUrl,
+                        hasLinks: containsUrl(index === 0 ? text : ""),
+                        pinned: false,
+                        createdAt: timestamp + index
+                    });
+                });
+            } else {
+                itemsToSave.push({
+                    id: `msg_${timestamp}_${Math.random().toString(36).substring(2, 7)}`,
+                    text: text,
+                    type: "text",
+                    fileName: null,
+                    fileSize: new Blob([text]).size,
+                    mimeType: "text/plain",
+                    fileData: null,
+                    hasLinks: containsUrl(text),
+                    pinned: false,
+                    createdAt: timestamp
+                });
+            }
+
+            // Reset Composer Immediately for Snappy Feel
+            input.value = "";
+            input.style.height = "auto";
+            clearStagingFiles();
+
+            for (const msgObj of itemsToSave) {
+                // 1. Save full object in Local IndexedDB immediately
+                await idbSaveMessage(msgObj);
+                messages.push(msgObj);
+                renderMessages();
+                updateCountsAndStorage();
+                scrollToBottom();
+
+                // 2. Sync to Firebase Firestore (respecting 1MB limit for huge files)
+                if (currentUser && db) {
+                    try {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'vault_messages', msgObj.id);
+                        const payloadSize = msgObj.fileData ? msgObj.fileData.length : 0;
+                        const cloudPayload = {
+                            ...msgObj,
+                            // If base64 attachment is under ~780KB, sync the entire binary to Firestore; otherwise sync metadata + local IndexedDB flag
+                            fileData: payloadSize < 780000 ? msgObj.fileData : null,
+                            storedInLocalVaultOnly: payloadSize >= 780000
+                        };
+                        await setDoc(docRef, cloudPayload);
+                    } catch (err) {
+                        console.warn("Saved in local IndexedDB (cloud sync skipped):", err);
+                    }
+                }
+            }
+
+            showToast("Saved to Vault", "fa-circle-check text-emerald-400");
+        };
+
+        // ==========================================
+        // 5. MESSAGE RENDERING & ACTIONS
+        // ==========================================
+        function containsUrl(str) {
+            if (!str) return false;
+            return /(https?:\/\/[^\s]+)/gi.test(str);
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return "";
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function formatMessageRichText(rawText) {
+            if (!rawText) return "";
+            let escaped = escapeHtml(rawText);
+
+            // Handle ```code blocks```
+            escaped = escaped.replace(/```([\s\S]*?)```/g, (match, codeContent) => {
+                const cleanCode = codeContent.trim();
+                return `
+                    <div class="my-2 rounded-xl bg-slate-950/90 border border-white/15 overflow-hidden text-left font-mono text-xs text-emerald-300">
+                        <div class="px-3 py-1.5 bg-white/5 border-b border-white/10 flex items-center justify-between text-[10px] text-slate-400">
+                            <span><i class="fa-solid fa-terminal mr-1"></i>Code Snippet</span>
+                            <button onclick="copyRawText(decodeURIComponent('${encodeURIComponent(cleanCode)}'))" class="hover:text-white flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> Copy Code
+                            </button>
+                        </div>
+                        <pre class="p-3 overflow-x-auto leading-relaxed">${cleanCode}</pre>
+                    </div>
+                `;
+            });
+
+            // Auto-link URLs
+            escaped = escaped.replace(/(https?:\/\/[^\s<]+)/gi, (url) => {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline decoration-white/60 hover:decoration-white font-medium break-all inline-flex items-center gap-1">${url}<i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>`;
+            });
+
+            return escaped.replace(/\n/g, "<br>");
+        }
+
+        function getFileBadgeInfo(fileName = "", mime = "") {
+            const ext = (fileName.split(".").pop() || "FILE").toUpperCase().slice(0, 5);
+            if (mime.includes("pdf") || ext === "PDF") return { ext: "PDF", icon: "fa-file-pdf", color: "bg-red-500/20 text-red-300 border-red-400/30" };
+            if (/(ZIP|RAR|7Z|TAR|GZ)/.test(ext)) return { ext, icon: "fa-file-zipper", color: "bg-amber-500/20 text-amber-300 border-amber-400/30" };
+            if (mime.includes("audio") || /(MP3|WAV|M4A|OGG)/.test(ext)) return { ext, icon: "fa-file-audio", color: "bg-purple-500/20 text-purple-300 border-purple-400/30" };
+            if (mime.includes("video") || /(MP4|MOV|WEBM|MKV)/.test(ext)) return { ext, icon: "fa-file-video", color: "bg-pink-500/20 text-pink-300 border-pink-400/30" };
+            if (/(DOC|DOCX|TXT|RTF|MD)/.test(ext)) return { ext, icon: "fa-file-word", color: "bg-blue-500/20 text-blue-300 border-blue-400/30" };
+            if (/(XLS|XLSX|CSV)/.test(ext)) return { ext, icon: "fa-file-excel", color: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30" };
+            return { ext, icon: "fa-file-lines", color: "bg-slate-500/20 text-slate-200 border-slate-400/30" };
+        }
+
+        function renderMessages() {
+            const container = document.getElementById("messages-container");
+            if (!container) return;
+
+            // Filter by Category & Search
+            const filtered = messages.filter((m) => {
+                if (currentCategory === "text" && m.type !== "text") return false;
+                if (currentCategory === "photos" && m.type !== "photo") return false;
+                if (currentCategory === "files" && m.type !== "file") return false;
+                if (currentCategory === "links" && !m.hasLinks) return false;
+                if (currentCategory === "pinned" && !m.pinned) return false;
+
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    const matchText = (m.text || "").toLowerCase().includes(q);
+                    const matchFile = (m.fileName || "").toLowerCase().includes(q);
+                    return matchText || matchFile;
+                }
+                return true;
+            });
+
+            // Update Pinned Banner
+            const pinnedItems = messages.filter(m => m.pinned);
+            const pinnedBanner = document.getElementById("pinned-banner");
+            if (pinnedItems.length > 0) {
+                pinnedBanner.classList.remove("hidden");
+                const latestPin = pinnedItems[pinnedItems.length - 1];
+                document.getElementById("pinned-banner-text").textContent =
+                    latestPin.text || latestPin.fileName || "Pinned Attachment";
+            } else {
+                pinnedBanner.classList.add("hidden");
+            }
+
+            // Update Sidebar Last Message Preview
+            if (messages.length > 0) {
+                const last = messages[messages.length - 1];
+                document.getElementById("sidebar-last-msg").textContent =
+                    last.text || (last.fileName ? `📎 ${last.fileName}` : "Saved item");
+            }
+
+            // Empty State
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center py-16 px-4 select-none">
+                        <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-apple-blue/20 to-purple-500/20 border border-white/15 flex items-center justify-center text-3xl text-apple-blue mb-4 shadow-inner">
+                            <i class="fa-solid fa-cloud-bolt"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-1">Your Apple Personal Vault is Ready</h3>
+                        <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
+                            Send any text, links, code snippets, paste screenshots (<kbd class="px-1.5 py-0.5 rounded bg-white/10 font-mono">Ctrl+V</kbd>), or drag & drop files here. Everything is permanently saved.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = "";
+            let lastDateLabel = "";
+
+            filtered.forEach((msg) => {
+                const msgDate = new Date(msg.createdAt);
+                const dateLabel = msgDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeLabel = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                if (dateLabel !== lastDateLabel) {
+                    lastDateLabel = dateLabel;
+                    html += `
+                        <div class="flex justify-center my-3 select-none">
+                            <span class="px-3 py-1 rounded-full text-[11px] font-medium bg-black/25 dark:bg-white/10 text-slate-300 backdrop-blur-md border border-white/10">
+                                ${dateLabel}
+                            </span>
+                        </div>
+                    `;
+                }
+
+                // Render Attachment Content
+                let attachmentHtml = "";
+                if (msg.type === "photo" && msg.fileData) {
+                    attachmentHtml = `
+                        <div class="mb-1.5 rounded-2xl overflow-hidden bg-black/20 border border-white/15 relative group/img cursor-pointer" onclick="openLightbox('${msg.id}')">
+                            <img src="${msg.fileData}" alt="${escapeHtml(msg.fileName || 'Photo')}" class="max-h-80 w-auto object-cover rounded-xl mx-auto">
+                            <div class="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition flex items-center justify-center gap-2">
+                                <span class="px-3 py-1.5 rounded-full bg-black/70 text-white text-xs font-medium flex items-center gap-1.5">
+                                    <i class="fa-solid fa-magnifying-glass-plus"></i> View Fullscreen
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                } else if (msg.type === "file") {
+                    const badge = getFileBadgeInfo(msg.fileName || "File", msg.mimeType || "");
+                    attachmentHtml = `
+                        <div class="flex items-center gap-3 p-3 rounded-2xl bg-black/25 border border-white/15 mb-1.5 min-w-[230px] sm:min-w-[280px]">
+                            <div class="w-11 h-11 rounded-xl border ${badge.color} flex flex-col items-center justify-center shrink-0">
+                                <i class="fa-solid ${badge.icon} text-base"></i>
+                                <span class="text-[8px] font-bold tracking-wider mt-0.5">${badge.ext}</span>
+                            </div>
+                            <div class="min-w-0 flex-1 text-left">
+                                <p class="text-xs font-semibold text-white truncate">${escapeHtml(msg.fileName || "Attached Document")}</p>
+                                <p class="text-[11px] text-blue-100/80">${formatBytes(msg.fileSize || 0)}</p>
+                            </div>
+                            <button onclick="downloadAttachment('${msg.id}')" class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition shrink-0" title="Download File">
+                                <i class="fa-solid fa-download text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                // Render Audio Player if audio file
+                if (msg.type === "file" && (msg.mimeType || "").startsWith("audio/") && msg.fileData) {
+                    attachmentHtml += `
+                        <audio controls src="${msg.fileData}" class="w-full max-w-xs h-9 mt-1 mb-1 rounded-lg"></audio>
+                    `;
+                }
+
+                const formattedText = formatMessageRichText(msg.text);
+
+                html += `
+                    <div id="msg-dom-${msg.id}" class="message-bubble-enter flex flex-col items-end group">
+                        <div class="flex items-center gap-1.5 max-w-[90%] sm:max-w-[75%] md:max-w-[65%]">
+                            
+                            <!-- Hover / Tap Action Bar -->
+                            <div class="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/10 shrink-0">
+                                ${msg.text ? `
+                                    <button onclick="copyMessageById('${msg.id}')" class="w-6 h-6 rounded-full hover:bg-white/15 text-slate-300 hover:text-white flex items-center justify-center text-[11px]" title="Copy Text">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                ` : ''}
+                                ${msg.fileData ? `
+                                    <button onclick="downloadAttachment('${msg.id}')" class="w-6 h-6 rounded-full hover:bg-white/15 text-slate-300 hover:text-white flex items-center justify-center text-[11px]" title="Download">
+                                        <i class="fa-solid fa-download"></i>
+                                    </button>
+                                ` : ''}
+                                <button onclick="togglePinMessage('${msg.id}')" class="w-6 h-6 rounded-full hover:bg-white/15 ${msg.pinned ? 'text-amber-400' : 'text-slate-300'} hover:text-amber-300 flex items-center justify-center text-[11px]" title="${msg.pinned ? 'Unpin' : 'Pin'}">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </button>
+                                <button onclick="promptDeleteMessage('${msg.id}')" class="w-6 h-6 rounded-full hover:bg-red-500/30 text-slate-300 hover:text-red-400 flex items-center justify-center text-[11px]" title="Delete">
+                                    <i class="fa-regular fa-trash-can"></i>
+                                </button>
+                            </div>
+
+                            <!-- Apple iMessage Bubble -->
+                            <div class="imessage-bubble-self px-4 py-2.5 text-sm leading-relaxed break-words relative">
+                                ${attachmentHtml}
+                                ${formattedText ? `<div class="selectable-text">${formattedText}</div>` : ''}
+                                <div class="flex items-center justify-end gap-1.5 text-[10px] text-blue-100/80 mt-1 select-none">
+                                    ${msg.pinned ? '<i class="fa-solid fa-thumbtack text-amber-300" title="Pinned"></i>' : ''}
+                                    <span>${timeLabel}</span>
+                                    <i class="fa-solid fa-check-double text-[9px]"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // 6. MESSAGE UTILITIES (COPY, PIN, DOWNLOAD, DELETE)
+        // ==========================================
+        window.copyRawText = function(textToCopy) {
+            const temp = document.createElement("textarea");
+            temp.value = textToCopy;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            showToast("Copied to clipboard", "fa-check text-emerald-400");
+        };
+
+        window.copyMessageById = function(id) {
+            const msg = messages.find(m => m.id === id);
+            if (msg && msg.text) {
+                copyRawText(msg.text);
+            }
+        };
+
+        window.downloadAttachment = function(id) {
+            const msg = messages.find(m => m.id === id);
+            if (!msg || !msg.fileData) {
+                showToast("File data unavailable on this device", "fa-circle-exclamation text-amber-400");
+                return;
+            }
+            const a = document.createElement("a");
+            a.href = msg.fileData;
+            a.download = msg.fileName || `Vault_File_${id}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("Download started", "fa-download text-apple-blue");
+        };
+
+        window.togglePinMessage = async function(id) {
+            const idx = messages.findIndex(m => m.id === id);
+            if (idx === -1) return;
+            messages[idx].pinned = !messages[idx].pinned;
+            const updated = messages[idx];
+
+            await idbSaveMessage(updated);
+            renderMessages();
+            updateCountsAndStorage();
+
+            if (currentUser && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'vault_messages', id);
+                    await updateDoc(docRef, { pinned: updated.pinned });
+                } catch (e) {
+                    console.warn("Pin updated locally:", e);
+                }
+            }
+            showToast(updated.pinned ? "Message Pinned" : "Message Unpinned", "fa-thumbtack text-amber-400");
+        };
+
+        let pendingDeleteId = null;
+        window.promptDeleteMessage = function(id) {
+            pendingDeleteId = id;
+            const modal = document.getElementById("confirm-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            document.getElementById("confirm-delete-btn").onclick = confirmDeleteMessage;
+        };
+
+        window.closeConfirmModal = function() {
+            pendingDeleteId = null;
+            const modal = document.getElementById("confirm-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        };
+
+        async function confirmDeleteMessage() {
+            if (!pendingDeleteId) return;
+            const id = pendingDeleteId;
+            closeConfirmModal();
+
+            messages = messages.filter(m => m.id !== id);
+            await idbDeleteMessage(id);
+            renderMessages();
+            updateCountsAndStorage();
+
+            if (currentUser && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'vault_messages', id);
+                    await deleteDoc(docRef);
+                } catch (e) {
+                    console.warn("Deleted locally:", e);
+                }
+            }
+            showToast("Deleted from Vault", "fa-trash-can text-red-400");
+        }
+
+        // Lightbox Preview
+        window.openLightbox = function(id) {
+            const msg = messages.find(m => m.id === id);
+            if (!msg || !msg.fileData) return;
+            document.getElementById("lightbox-img").src = msg.fileData;
+            document.getElementById("lightbox-title").textContent = msg.fileName || "Saved Photo";
+            document.getElementById("lightbox-download-btn").onclick = () => downloadAttachment(id);
+            const modal = document.getElementById("lightbox-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        };
+
+        window.closeLightbox = function() {
+            const modal = document.getElementById("lightbox-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        };
+
+        // ==========================================
+        // 7. FILTERING, SEARCH, STORAGE STATS & THEME
+        // ==========================================
+        window.setCategory = function(cat) {
+            currentCategory = cat;
+            document.querySelectorAll(".cat-pill").forEach(btn => {
+                if (btn.dataset.pill === cat) {
+                    btn.className = "cat-pill px-3 py-1 rounded-full text-xs font-medium bg-apple-blue text-white shadow-sm shrink-0 transition";
+                } else {
+                    btn.className = "cat-pill px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/15 shrink-0 transition";
+                }
+            });
+            document.querySelectorAll(".sidebar-cat-btn").forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.classList.add("bg-white/10", "text-white");
+                    btn.classList.remove("text-slate-300");
+                } else {
+                    btn.classList.remove("bg-white/10", "text-white");
+                    btn.classList.add("text-slate-300");
+                }
+            });
+            renderMessages();
+        };
+
+        window.handleSearch = function(val) {
+            searchQuery = val.trim();
+            const clearBtn = document.getElementById("clear-search-btn");
+            if (clearBtn) {
+                clearBtn.classList.toggle("hidden", !searchQuery);
+            }
+            renderMessages();
+        };
+
+        window.clearSearch = function() {
+            searchQuery = "";
+            document.getElementById("search-input").value = "";
+            const mob = document.getElementById("mobile-search-input");
+            if (mob) mob.value = "";
+            document.getElementById("clear-search-btn").classList.add("hidden");
+            renderMessages();
+        };
+
+        window.toggleMobileSearch = function() {
+            const bar = document.getElementById("mobile-search-bar");
+            bar.classList.toggle("hidden");
+            if (!bar.classList.contains("hidden")) {
+                document.getElementById("mobile-search-input").focus();
+            }
+        };
+
+        window.scrollToLatestPinned = function() {
+            const pinned = messages.filter(m => m.pinned);
+            if (pinned.length === 0) return;
+            const lastPin = pinned[pinned.length - 1];
+            const el = document.getElementById(`msg-dom-${lastPin.id}`);
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                el.classList.add("ring-2", "ring-apple-blue", "rounded-2xl");
+                setTimeout(() => el.classList.remove("ring-2", "ring-apple-blue", "rounded-2xl"), 1500);
+            }
+        };
+
+        function updateCountsAndStorage() {
+            const counts = {
+                all: messages.length,
+                text: messages.filter(m => m.type === "text").length,
+                photos: messages.filter(m => m.type === "photo").length,
+                files: messages.filter(m => m.type === "file").length,
+                links: messages.filter(m => m.hasLinks).length,
+                pinned: messages.filter(m => m.pinned).length
+            };
+
+            Object.keys(counts).forEach(k => {
+                const el = document.getElementById(`count-${k}`);
+                if (el) el.textContent = counts[k];
+            });
+
+            const totalBytes = messages.reduce((acc, m) => acc + (m.fileSize || 0), 0);
+            const label = document.getElementById("storage-size-label");
+            if (label) label.textContent = formatBytes(totalBytes);
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return "0 B";
+            const k = 1024;
+            const sizes = ["B", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById("messages-container");
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // Theme Toggle (Apple Dark / Light Mode)
+        window.toggleTheme = function() {
+            isDarkMode = !isDarkMode;
+            const htmlEl = document.documentElement;
+            const bodyEl = document.getElementById("app-body");
+            const shellEl = document.getElementById("window-shell");
+            const iconEl = document.getElementById("theme-icon");
+
+            if (isDarkMode) {
+                htmlEl.classList.add("dark");
+                bodyEl.className = "apple-wallpaper-dark text-slate-100 h-screen w-screen overflow-hidden relative transition-colors duration-500";
+                shellEl.className = "glass-panel-dark w-full h-full max-w-7xl sm:rounded-3xl shadow-2xl flex overflow-hidden relative transition-colors duration-300";
+                iconEl.className = "fa-solid fa-moon";
+            } else {
+                htmlEl.classList.remove("dark");
+                bodyEl.className = "apple-wallpaper-light text-slate-800 h-screen w-screen overflow-hidden relative transition-colors duration-500";
+                shellEl.className = "glass-panel-light w-full h-full max-w-7xl sm:rounded-3xl shadow-2xl flex overflow-hidden relative transition-colors duration-300";
+                iconEl.className = "fa-solid fa-sun text-amber-500";
+            }
+            idbSaveSetting("theme", isDarkMode ? "dark" : "light");
+        };
+
+        // ==========================================
+        // 8. CLOUD & BACKUP MODAL + EXPORT / IMPORT
+        // ==========================================
+        window.openCloudModal = function() {
+            const modal = document.getElementById("cloud-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        };
+
+        window.closeCloudModal = function() {
+            const modal = document.getElementById("cloud-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        };
+
+        window.exportVaultBackup = function() {
+            const backupPayload = {
+                vaultVersion: "1.0",
+                exportedAt: new Date().toISOString(),
+                totalItems: messages.length,
+                messages: messages
+            };
+            const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `iCloud_Vault_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Full Vault Backup Downloaded!", "fa-box-archive text-emerald-400");
+        };
+
+        window.importVaultBackup = function(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedList = Array.isArray(parsed) ? parsed : (parsed.messages || []);
+                    for (const item of importedList) {
+                        if (item.id && item.createdAt) {
+                            await idbSaveMessage(item);
+                            if (currentUser && db) {
+                                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'vault_messages', item.id);
+                                const size = item.fileData ? item.fileData.length : 0;
+                                await setDoc(docRef, { ...item, fileData: size < 780000 ? item.fileData : null });
+                            }
+                        }
+                    }
+                    messages = (await idbGetAllMessages()).sort((a, b) => a.createdAt - b.createdAt);
+                    renderMessages();
+                    updateCountsAndStorage();
+                    showToast(`Restored ${importedList.length} items to Vault!`, "fa-circle-check text-emerald-400");
+                } catch (err) {
+                    showToast("Invalid backup JSON file", "fa-triangle-exclamation text-red-400");
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        window.saveCustomFirebaseConfig = async function() {
+            const raw = document.getElementById("custom-firebase-input").value.trim();
+            if (!raw) return;
+            try {
+                JSON.parse(raw);
+                await idbSaveSetting("customFirebaseConfig", raw);
+                showToast("Custom Firebase Config Saved! Reconnecting...", "fa-fire text-orange-400");
+                await initCloudSync();
+            } catch (e) {
+                showToast("Invalid JSON format for Firebase Config", "fa-circle-exclamation text-red-400");
+            }
+        };
+
+        // Toast Helper
+        let toastTimeout = null;
+        function showToast(text, iconClasses = "fa-circle-check text-emerald-400") {
+            const toast = document.getElementById("apple-toast");
+            const toastText = document.getElementById("apple-toast-text");
+            const toastIcon = document.getElementById("apple-toast-icon");
+            toastText.textContent = text;
+            toastIcon.className = `fa-solid ${iconClasses}`;
+            toast.classList.remove("opacity-0", "-translate-y-6");
+            toast.classList.add("opacity-100", "translate-y-0");
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add("opacity-0", "-translate-y-6");
+                toast.classList.remove("opacity-100", "translate-y-0");
+            }, 2600);
+        }
+
+        // ==========================================
+        // 9. BOOTSTRAP ON WINDOW LOAD
+        // ==========================================
+        window.onload = async function() {
+            updateLockClock();
+            setInterval(updateLockClock, 1000);
+
+            await initIndexedDB();
+
+            // Load saved theme preference
+            const savedTheme = await idbGetSetting("theme");
+            if (savedTheme === "light" && isDarkMode) {
+                toggleTheme();
+            }
+
+            // Load local IndexedDB messages immediately so history is always there even offline
+            const localStored = await idbGetAllMessages();
+            if (localStored.length > 0) {
+                messages = localStored.sort((a, b) => a.createdAt - b.createdAt);
+            } else {
+                // Seed a welcome note on first launch
+                const welcomeMsg = {
+                    id: "welcome_apple_vault_5109",
+                    text: "Welcome to your personal Apple iCloud Vault (PIN: 5109) \n\n• Send any text, notes, links, or code snippets\n• Paste screenshots directly with Ctrl+V or drag & drop photos\n• Attach PDFs, ZIPs, Audio, or any document\n• Everything is permanently saved in your history!",
+                    type: "text",
+                    fileName: null,
+                    fileSize: 245,
+                    mimeType: "text/plain",
+                    fileData: null,
+                    hasLinks: false,
+                    pinned: true,
+                    createdAt: Date.now()
+                };
+                await idbSaveMessage(welcomeMsg);
+                messages = [welcomeMsg];
+            }
+
+            renderMessages();
+            updateCountsAndStorage();
+
+            // Start Firebase Cloud Sync
+            await initCloudSync();
+        };
+    </script>
+</body>
+</html>
